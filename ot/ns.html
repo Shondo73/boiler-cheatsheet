@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Порядок действий при несчастном случае</title>
+  <style>
+    :root {
+      --primary: #0056b3;
+      --danger: #dc3545;
+      --warning: #ffc107;
+      --bg: #f8f9fa;
+      --text: #212529;
+      --card: #ffffff;
+    }
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 12px;
+      line-height: 1.5;
+    }
+    h1 {
+      text-align: center;
+      font-size: 1.4rem;
+      margin-bottom: 16px;
+    }
+    .section-title {
+      color: var(--primary);
+      border-bottom: 2px solid var(--primary);
+      padding-bottom: 6px;
+      margin-top: 24px;
+      margin-bottom: 12px;
+    }
+    .card {
+      background: var(--card);
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+    ul {
+      padding-left: 18px;
+    }
+    li {
+      margin-bottom: 8px;
+    }
+    .highlight {
+      font-weight: 700;
+      color: var(--danger);
+    }
+    .note {
+      background-color: var(--warning);
+      color: #000;
+      padding: 10px;
+      border-radius: 6px;
+      font-size: 0.9rem;
+    }
+    @media (min-width: 600px) {
+      body { padding: 16px; }
+      h1 { font-size: 1.6rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Порядок действий при несчастном случае</h1>
+
+  <div class="card">
+    <h2 class="section-title">1. Неотложные действия</h2>
+    <p>Сразу после происшествия нужно:</p>
+    <ul>
+      <li>Оказать пострадавшему первую помощь, при необходимости вызвать скорую и доставить в медорганизацию.</li>
+      <li>Принять меры, чтобы не допустить развития аварии и травмирования других людей.</li>
+      <li>По возможности сохранить обстановку на месте происшествия.</li>
+      <li>Если сохранить обстановку невозможно (угроза жизни, продолжение работы) — зафиксировать её: сделать фото, видео, составить схемы.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2 class="section-title">2. Уведомление госорганов</h2>
+    <p>В течение <span class="highlight">24 часов</span> с момента инцидента работодатель обязан направить извещение по установленной форме. Куда именно — зависит от тяжести случая:</p>
+
+    <div style="margin-bottom:12px;">
+      <strong>При лёгком случае:</strong> только в СФР.
+    </div>
+
+    <div>
+      <strong>При тяжёлом, смертельном или групповом случае:</strong> в трудовую инспекцию, прокуратуру, региональный Минтруд, СФР и профсоюзы.
+    </div>
+  </div>
+
+  <div class="card note">
+    <strong>Важное уточнение:</strong> если по прошествии времени лёгкий случай перешёл в категорию тяжёлого или смертельного, у работодателя есть <span class="highlight">3 суток</span> с момента получения таких сведений, чтобы направить извещение. Адресаты — те же, что и при изначальном тяжёлом случае.
+  </div>
+
+</body>
+</html>
