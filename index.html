@@ -29,9 +29,29 @@
     </nav>
     <main>
       <p>Выберите раздел для изучения.</p>
+      <input type="text" id="searchInput" placeholder="Поиск по сайту...">
+      <div id="results"></div>
     </main>
     <footer>
       <p>Справочные материалы. Не заменяет производственные инструкции.</p>
     </footer>
+    <script>
+      const pages = [
+        { title: "Охрана труда в тепловых камерах", content: "Правила безопасности при работе в ограниченных пространствах..." },
+        { title: "Работа на высоте (782н)", content: "Требования к СИЗ, организации работ и оформлению нарядов..." }
+      ];
+
+      document.getElementById('searchInput').addEventListener('input', (e) => {
+        const q = e.target.value.toLowerCase();
+        const results = document.getElementById('results');
+        results.innerHTML = '';
+
+        pages.filter(p => p.title.includes(q) || p.content.includes(q)).forEach(p => {
+          const div = document.createElement('div');
+          div.innerHTML = `<b>${p.title}</b><br>${p.content}`;
+          results.appendChild(div);
+        });
+      });
+    </script>
   </body>
 </html>
