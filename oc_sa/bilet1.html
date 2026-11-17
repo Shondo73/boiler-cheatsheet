@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Тест из 6 вопросов</title>
+</head>
+<body>
+  <h1>Заполните 6 вопросов</h1>
+
+  <form id="quizForm">
+    <div>
+      <label>Вопрос 1: <input type="text" name="q1" required></label>
+    </div>
+    <div>
+      <label>Вопрос 2: <input type="text" name="q2" required></label>
+    </div>
+    <div>
+      <label>Вопрос 3: <input type="text" name="q3" required></label>
+    </div>
+    <div>
+      <label>Вопрос 4: <input type="text" name="q4" required></label>
+    </div>
+    <div>
+      <label>Вопрос 5: <input type="text" name="q5" required></label>
+    </div>
+    <div>
+      <label>Вопрос 6: <input type="text" name="q6" required></label>
+    </div>
+
+    <button type="submit">Отправить</button>
+  </form>
+
+  <div id="result"></div>
+
+  <script>
+    const form = document.getElementById('quizForm');
+    const resultDiv = document.getElementById('result');
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault(); // не перезагружаем страницу
+
+      // Собираем ответы по именам полей
+      const answers = {
+        q1: form.q1.value,
+        q2: form.q2.value,
+        q3: form.q3.value,
+        q4: form.q4.value,
+        q5: form.q5.value,
+        q6: form.q6.value,
+      };
+
+      // Можно вывести на экран
+      resultDiv.innerHTML = '<h2>Ваши ответы:</h2><pre>' + JSON.stringify(answers, null, 2) + '</pre>';
+
+      // Или отправить на сервер:
+      /*
+      fetch('/save-answers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(answers),
+      })
+      .then(res => res.json())
+      .then(data => console.log('Сохранено:', data));
+      */
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Билет: 6 вопросов → 6 ответов</title>
+<style>
+  body { font-family: Arial, sans-serif; max-width: 900px; margin: 30px auto; line-height: 1.5; }
+  input.q { width: 100%; padding: 8px; margin-bottom: 8px; font-size: 16px; box-sizing: border-box; }
+  pre { font-family: inherit; white-space: pre-wrap; background: #f6f6f6; padding: 10px; border-radius: 6px; }
+  .missing { color: #c0392b; }
+  button { padding: 10px 20px; font-size: 16px; }
+  #result h2 { border-bottom: 2px solid #3a7; padding-bottom: 4px; }
+</style>
+</head>
+<body>
+<h1>Сборка билета</h1>
+
+<p>Введите 6 вопросов билета:</p>
+<div id="fields"></div>
+
+<p>
+  <label>HTML-файлы с ответами: <input type="file" id="files" multiple accept=".html,.htm"></label>
+</p>
+<p><button id="go">Собрать ответы</button></p>
+<p id="log"></p>
+<div id="result"></div>
+<a id="save" style="display:none" download="bilet.html">💾 Скачать страницу с ответами</a>
+
+<script>
+// ---- 6 полей для вопросов (создаются автоматически) ----
+const fieldsDiv = document.getElementById('fields');
+for (let i = 1; i <= 6; i++) {
+  let inp = document.createElement('input');
+  inp.className = 'q';
+  inp.placeholder = 'Вопрос ' + i;
+  fieldsDiv.appendChild(inp);
+}
+
+// ---- очистка блока ответа: списки → строки, пустое → выбросить ----
+function cleanHTML(html) {
+  let doc = new DOMParser().parseFromString('<div>' + html + '</div>', 'text/html');
+  doc.querySelectorAll('li:empty, p:empty').forEach(e => e.remove());
+  let out = [];
+  doc.querySelectorAll('p, li').forEach(e => {
+    let t = e.textContent.trim();
+    if (t) out.push((e.tagName === 'LI' ? '• ' : '') + t);
+  });
+  if (!out.length) {
+    let t = doc.body.textContent.replace(/\s+/g, ' ').trim();
+    if (t) out.push(t);
+  }
+  return out.join('\n');
+}
+
+// ---- приведение вопроса к сравнимому виду ----
+function norm(s) {
+  return s.toLowerCase()
+    .replace(/^\d+[\.\)]\s*/, '')
+    .replace(/[^\wа-яё ]+/g, ' ')
+    .replace(/\s+/g, ' ').trim();
+}
+
+// ---- извлечение пар «вопрос → ответ» из файла ----
+function extractPairs(content) {
+  let doc = new DOMParser().parseFromString(content, 'text/html');
+  let pairs = [];
+  // формат 1: <li><a>Вопрос</a><div class="detail">Ответ</div></li>
+  doc.querySelectorAll('li').forEach(li => {
+    let a = li.querySelector('a'), d = li.querySelector('.detail');
+    if (a && d) {
+      let ans = cleanHTML(d.innerHTML);
+      if (ans) pairs.push([norm(a.textContent), ans]);
+    }
+  });
+  // формат 2: <h2><a>Вопрос</a></h2> + всё до следующего h2
+  doc.querySelectorAll('h2 > a').forEach(a => {
+    let node = a.closest('h2').nextElementSibling, buf = '';
+    while (node && node.tagName !== 'H2') { buf += node.outerHTML + '\n'; node = node.nextElementSibling; }
+    let ans = cleanHTML(buf);
+    if (ans) pairs.push([norm(a.textContent), ans]);
+  });
+  return pairs;
+}
+
+document.getElementById('go').addEventListener('click', () => {
+  // вопросы из полей
+  let questions = Array.from(document.querySelectorAll('input.q'))
+    .map(inp => inp.value.trim()).filter(Boolean);
+  if (questions.length < 6) { alert('Заполните все 6 вопросов'); return; }
+
+  let input = document.getElementById('files');
+  if (!input.files.length) { alert('Выберите HTML-файлы с ответами'); return; }
+
+  // читаем все выбранные файлы
+  let bank = [], left = input.files.length;
+  Array.from(input.files).forEach(file => {
+    let r = new FileReader();
+    r.onload = e => { bank.push(...extractPairs(e.target.result)); if (--left === 0) build(); };
+    r.readAsText(file, 'utf-8');
+  });
+
+  function build() {
+    let html = '<h1>Ответы на билет</h1>', miss = 0;
+    questions.forEach(q => {
+      let nq = norm(q);
+      let m = bank.find(([nt]) => nt.includes(nq) || nq.includes(nt));
+      if (m) html += '<h2>' + q + '</h2><pre>' + m[1].replace(/</g, '&lt;') + '</pre>';
+      else  { html += '<h2 class="missing">✗ ' + q + '</h2><p class="missing">Ответ не найден</p>'; miss++; }
+    });
+
+    document.getElementById('log').textContent =
+      'Всего ответов на страницах: ' + bank.length + (miss ? ' | Не найдено: ' + miss : '');
+    document.getElementById('result').innerHTML = html;
+
+    let blob = new Blob(['<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"></head><body>' + html + '</body></html>'], {type: 'text/html'});
+    let save = document.getElementById('save');
+    save.href = URL.createObjectURL(blob);
+    save.style.display = 'inline';
+  }
+});
+</script>
+</body>
+</html>

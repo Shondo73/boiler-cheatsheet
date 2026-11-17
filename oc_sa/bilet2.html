@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Билет: 6 вопросов → 6 ответов</title>
+<link rel="stylesheet" href="css/style1.css">
+
+</head>
+<body>
+<h1>Сборка билета</h1>
+
+<p><label>HTML-файлы с ответами: <input type="file" id="files" multiple accept=".html,.htm"></label></p>
+
+<p><input id="base" placeholder="Папка со страницами, напр.: file:///C:/bilet/ (для ссылок)"></p>
+
+<p>Введите 6 вопросов билета:</p>
+<div id="fields"></div>
+
+<p><button id="go">Собрать ответы</button></p>
+<p id="log"></p>
+<div id="result"></div>
+<a id="save" style="display:none" download="bilet.html">💾 Скачать страницу с ответами</a>
+
+<script>
+let bank = [];
+
+function esc(s) {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// подстановка пути к папке для относительных ссылок
+function resolveHref(href) {
+  if (!href) return null;
+  if (/^(https?:|file:|#|mailto:)/.test(href)) return href;
+  const base = document.getElementById('base').value.trim();
+  if (!base) return null;
+  return base.replace(/\/?$/, '/') + href.replace(/^\.\//, '');
+}
+
+// очистка и починка ссылок в переносимом блоке
+function prepBlock(el) {
+  el.querySelectorAll('script, style').forEach(s => s.remove());
+  el.querySelectorAll('a[href]').forEach(a => {
+    const r = resolveHref(a.getAttribute('href'));
+    if (r) { a.setAttribute('href', r); a.setAttribute('target', '_blank'); }
+  });
+  return el.innerHTML;
+}
+
+// извлечение блоков «вопрос → ответ» целиком, с сохранением разметки
+function extractPairs(content) {
+  const doc = new DOMParser().parseFromString(content, 'text/html');
+  const pairs = [];
+  // формат 1: <li><a>Вопрос</a><div class="detail">Ответ</div></li>
+  doc.querySelectorAll('li').forEach(li => {
+    const a = li.querySelector('a'), d = li.querySelector('.detail');
+    if (a && d && d.textContent.trim()) {
+      const wrap = document.createElement('div');
+      wrap.appendChild(li.cloneNode(true));           // весь <li> целиком
+      pairs.push([norm(a.textContent), a.textContent.trim(), prepBlock(wrap)]);
+    }
+  });
+  // формат 2: <h2><a>Вопрос</a></h2> + содержимое до следующего h2
+  doc.querySelectorAll('h2 > a').forEach(a => {
+    let node = a.closest('h2').nextElementSibling, buf = '';
+    while (node && node.tagName !== 'H2') { buf += node.outerHTML + '\n'; node = node.nextElementSibling; }
+    if (buf.trim()) {
+      const wrap = document.createElement('div');
+      wrap.innerHTML = buf;                            // h2 + всё, что после него
+      pairs.push([norm(a.textContent), a.textContent.trim(), prepBlock(wrap)]);
+    }
+  });
+  return pairs;
+}
+
+function norm(s) {
+  return s.toLowerCase()
+    .replace(/^\d+[\.\)]\s*/, '')
+    .replace(/[^\wа-яё ]+/g, ' ')
+    .replace(/\s+/g, ' ').trim();
+}
+
+// ---- 6 полей с автоподсказками ----
+const fieldsDiv = document.getElementById('fields');
+for (let i = 1; i <= 6; i++) {
+  const wrap = document.createElement('div');
+  wrap.className = 'qwrap';
+  const inp = document.createElement('input');
+  inp.className = 'q';
+  inp.placeholder = 'Вопрос ' + i;
+  const sug = document.createElement('div');
+  sug.className = 'sug';
+  inp.addEventListener('input', () => showSug(inp, sug));
+  inp.addEventListener('blur', () => setTimeout(() => sug.style.display = 'none', 150));
+  wrap.appendChild(inp); wrap.appendChild(sug);
+  fieldsDiv.appendChild(wrap);
+}
+
+function showSug(inp, sug) {
+  const nq = norm(inp.value);
+  if (!nq || !bank.length) { sug.style.display = 'none'; return; }
+  const hits = bank.filter(([nt]) => nt.includes(nq) || nq.includes(nt)).slice(0, 8);
+  if (!hits.length) { sug.style.display = 'none'; return; }
+  sug.innerHTML = '';
+  hits.forEach(([, title]) => {
+    const item = document.createElement('div');
+    item.textContent = title;
+    item.addEventListener('mousedown', e => {
+      e.preventDefault();
+      inp.value = title;
+      sug.style.display = 'none';
+    });
+    sug.appendChild(item);
+  });
+  sug.style.display = 'block';
+}
+
+document.getElementById('files').addEventListener('change', e => {
+  bank = [];
+  let left = e.target.files.length;
+  Array.from(e.target.files).forEach(file => {
+    const r = new FileReader();
+    r.onload = ev => { bank.push(...extractPairs(ev.target.result)); if (--left === 0) ready(); };
+    r.readAsText(file, 'utf-8');
+  });
+});
+
+function ready() {
+  document.getElementById('log').textContent = 'Загружено вопросов: ' + bank.length + ' — подсказки работают.';
+}
+
+document.getElementById('go').addEventListener('click', () => {
+  const questions = Array.from(document.querySelectorAll('input.q')).map(i => i.value.trim()).filter(Boolean);
+  if (questions.length < 6) { alert('Заполните все 6 вопросов'); return; }
+  if (!bank.length) { alert('Сначала выберите HTML-файлы с ответами'); return; }
+
+  let html = '<h1>Ответы на билет</h1>', miss = 0;
+  questions.forEach(q => {
+    const nq = norm(q);
+    const m = bank.find(([nt]) => nt.includes(nq) || nq.includes(nt));
+    if (m) html += '<div class="block">' + m[2] + '</div>';
+    else  { html += '<div class="block"><h2 class="missing">✗ ' + esc(q) + '</h2><p class="missing">Ответ не найден</p></div>'; miss++; }
+  });
+
+  document.getElementById('result').innerHTML = html;
+
+  const blob = new Blob(['<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif;max-width:900px;margin:30px auto;line-height:1.5}.detail{background:#f6f6f6;padding:10px;border-radius:6px;margin-top:6px}.missing{color:#c0392b}</style></head><body>' + html + '</body></html>'], {type: 'text/html'});
+  const save = document.getElementById('save');
+  save.href = URL.createObjectURL(blob);
+  save.style.display = 'inline';
+});
+</script>
+</body>
+</html>
